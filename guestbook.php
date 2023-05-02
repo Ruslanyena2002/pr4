@@ -1,11 +1,25 @@
 <?php
 session_start();
 
-if (!empty($_POST)){
-    $jsonString = json_encode($_POST);
-    $fileStream = fopen ('comments.csv','a');
-    fwrite($fileStream , $jsonString ."\n");
-    fclose($fileStream);
+$aConfig = require_once 'config.php';
+
+if (isset($_POST)){
+    $db = mysqli_connect(
+        $aConfig['host'],
+        $aConfig['user'],
+        $aConfig['pass'],
+        $aConfig['name']
+    );
+    $query = "INSERT INTO comments (name, email, comment, dignity, limitations) VALUES (
+    '". $_POST['name']."',
+    '". $_POST['email']."',
+    '". $_POST['comment']."',
+    '". $_POST['dignity']."',
+    '". $_POST['limitations']."'
+    )";
+
+    mysqli_query($db, $query);
+    mysqli_close($db);
 }
 ?>
 
@@ -30,12 +44,12 @@ if (!empty($_POST)){
                 <div class="col-sm-6">
                     <form method="post">
                         <div class="form-group">
-                            <label>Email</label>
-                            <input class="form-control" type="email" name="email"/>
-                        </div>
-                        <div class="form-group">
                             <label>Name</label>
                             <input class="form-control" type="text" name="name"/>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input class="form-control" type="email" name="email"/>
                         </div>
                         <div class="form-group">
                             <label>Comments</label>
@@ -67,23 +81,26 @@ if (!empty($_POST)){
             <div class="row">
                 <div class="col-sm-6">
                     <?php
-                    if ( file_exists ('comments.csv')){
-                        $fileStream = fopen('comments.csv', "r");
-                        while(!feof($fileStream)){
-                            $jsonString = fgets ($fileStream);
-                            $array = json_decode ($jsonString, true);
+                    $db = mysqli_connect(
+                        $aConfig['host'],
+                        $aConfig['user'],
+                        $aConfig['pass'],
+                        $aConfig['name']
+                    );
 
-                            if (empty ($array)) break ;
+                    $query = 'SELECT * FROM comments';
+                    $dbResponse = mysqli_query($db, $query);
+                    $aComments = mysqli_fetch_all($dbResponse, MYSQLI_ASSOC);
+                    mysqli_close($db);
 
-                            echo $array ['name'] . '<br>';
-                            echo $array ['email'] . '<br>';
-                            echo $array ['comment'] . '<br>';
-                            echo "Достоинства";
-                            echo '<br>' . $array ['dignity'] . '<br>';
-                            echo "Недостатки";
-                            echo '<br>' . $array ['limitations'] . '<br><hr>';
-                        }
-                        fclose ($fileStream );
+                    foreach($aComments as $comment) {
+                        echo $comment ['name'] . '<br>';
+                        echo $comment ['email'] . '<br>';
+                        echo $comment ['comment'] . '<br>';
+                        echo "Достоинства";
+                        echo '<br>' . $comment ['dignity'] . '<br>';
+                        echo "Недостатки";
+                        echo '<br>' . $comment ['limitations'] . '<br><hr>';
                     }
                     ?>
                 </div>
